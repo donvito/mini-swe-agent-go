@@ -183,6 +183,14 @@ func TestProviderResolution(t *testing.T) {
 			t.Errorf("%v: got provider=%s model=%s base=%s key=%s cache=%q", tc.config, m.provider, m.apiModelName, m.apiBase, m.apiKey, m.Config.SetCacheControl)
 		}
 	}
+	for name, want := range map[string]bool{
+		"anthropic/claude-sonnet-4.5": true, "openrouter/anthropic/claude-opus-4.6": true, "claude-3-5-haiku": true,
+		"Jackrong/Qwopus3.8-27B-Coder-Flash-GGUF:Q4_K_M": false, "gpt-5": false, "deepseek/deepseek-v4.1-flash": false,
+	} {
+		if isAnthropicModel(name) != want {
+			t.Errorf("isAnthropicModel(%q) = %v", name, !want)
+		}
+	}
 	if _, err := NewOpenAIModel(map[string]any{"model_name": "hosted_vllm/x"}); err == nil {
 		t.Error("expected error for provider without base URL")
 	}

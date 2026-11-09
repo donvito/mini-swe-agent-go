@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 
 	mswea "github.com/donvito/mini-swe-agent-go"
@@ -136,12 +136,7 @@ func GetModelName(inputModelName string, config map[string]any) (string, error) 
 	return "", fmt.Errorf("no default model set. Please run `mini-go-extra config setup` to set one")
 }
 
-func isAnthropicModel(name string) bool {
-	name = strings.ToLower(name)
-	for _, s := range []string{"anthropic", "sonnet", "opus", "claude"} {
-		if strings.Contains(name, s) {
-			return true
-		}
-	}
-	return false
-}
+var anthropicModelRe = regexp.MustCompile(`(?i)(^|[^a-z])(anthropic|sonnet|opus|claude)([^a-z]|$)`)
+
+// isAnthropicModel matches whole words only, so that e.g. "qwopus" isn't mistaken for "opus".
+func isAnthropicModel(name string) bool { return anthropicModelRe.MatchString(name) }

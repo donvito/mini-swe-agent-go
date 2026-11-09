@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -47,7 +48,7 @@ func newCommand() *cobra.Command {
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return run(cmd.Context(), opts, cmd.Flags().Changed("cost-limit"))
+			return run(cmd.Context(), opts, cmd.Flags().Changed("cost-limit"), defaultConfig)
 		},
 	}
 	f := cmd.Flags()
@@ -76,7 +77,7 @@ func section(config map[string]any, key string) map[string]any {
 	return s
 }
 
-func run(ctx context.Context, opts options, costLimitGiven bool) error {
+func run(ctx context.Context, opts options, costLimitGiven bool, defaultConfig string) error {
 	if err := cli.ConfigureIfFirstTime(ctx); err != nil {
 		return err
 	}
@@ -102,6 +103,10 @@ func run(ctx context.Context, opts options, costLimitGiven bool) error {
 	cfg := utils.RecursiveMerge(append(configs, map[string]any{
 		"run": runOverrides, "agent": agentOverrides, "model": modelOverrides, "environment": envOverrides,
 	})...)
+	if _, ok := section(cfg, "agent")["system_template"]; !ok {
+		return fmt.Errorf("the config has no prompt templates (agent.system_template). Passing -c replaces the default "+
+			"config, so put a full config first, e.g.: mini-go -c %s -c %s", defaultConfig, strings.Join(opts.configSpecs, " -c "))
+	}
 
 	task, ok := section(cfg, "run")["task"].(string)
 	if !ok {
